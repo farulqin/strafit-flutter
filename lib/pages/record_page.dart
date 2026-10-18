@@ -315,56 +315,11 @@ class _RecordPageState extends State<RecordPage> {
   }
 
   Future<double?> _askDistance() async {
-    final controller = TextEditingController(
-      text: _distanceKm > 0 ? _distanceKm.toStringAsFixed(2) : '',
-    );
-
     final result = await showDialog<String>(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Simpan aktivitas'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              _distanceKm > 0
-                  ? 'Jarak GPS: ${_distanceKm.toStringAsFixed(2)} km. '
-                      'Kamu bisa mengoreksinya jika perlu.'
-                  : 'Jarak GPS belum tersedia. Masukkan jarak secara manual.',
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              autofocus: true,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(
-                labelText: 'Jarak (km)',
-                hintText: 'Contoh: 2.5',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, 'CANCEL'),
-            child: const Text('Lanjutkan nanti'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(
-              dialogContext,
-              controller.text.trim(),
-            ),
-            child: const Text('Simpan'),
-          ),
-        ],
-      ),
+      builder: (dialogContext) => _DistanceDialog(distanceKm: _distanceKm),
     );
-
-    controller.dispose();
 
     if (result == null || result == 'CANCEL') return null;
 
@@ -465,8 +420,6 @@ class _RecordPageState extends State<RecordPage> {
 
       await AppState.instance.loadActivities();
 
-      await AppState.instance.loadActivities();
-
       if (!mounted) return;
 
      
@@ -495,8 +448,6 @@ class _RecordPageState extends State<RecordPage> {
           content: Text('Aktivitas berhasil disimpan ke database!'),
         ),
       );
-
-      widget.onSaved();
 
       widget.onSaved();
     } catch (error) {
@@ -846,6 +797,69 @@ class _RecordPageState extends State<RecordPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+
+/// Dialog input jarak. Controller dimiliki dan di-dispose oleh State dialog
+/// sendiri, sehingga aman saat animasi penutupan dialog masih berjalan.
+class _DistanceDialog extends StatefulWidget {
+  const _DistanceDialog({required this.distanceKm});
+
+  final double distanceKm;
+
+  @override
+  State<_DistanceDialog> createState() => _DistanceDialogState();
+}
+
+class _DistanceDialogState extends State<_DistanceDialog> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.distanceKm > 0 ? widget.distanceKm.toStringAsFixed(2) : '',
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Simpan aktivitas'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.distanceKm > 0
+                ? 'Jarak GPS: ${widget.distanceKm.toStringAsFixed(2)} km. '
+                    'Kamu bisa mengoreksinya jika perlu.'
+                : 'Jarak GPS belum tersedia. Masukkan jarak secara manual.',
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Jarak (km)',
+              hintText: 'Contoh: 2.5',
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, 'CANCEL'),
+          child: const Text('Lanjutkan nanti'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _controller.text.trim()),
+          child: const Text('Simpan'),
+        ),
+      ],
     );
   }
 }

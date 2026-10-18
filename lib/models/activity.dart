@@ -6,6 +6,7 @@ class Activity {
     required this.distanceKm,
     required this.durationMinutes,
     required this.date,
+    this.durationSeconds = 0,
   });
 
   final int? id;
@@ -13,6 +14,7 @@ class Activity {
   final String type;
   final double distanceKm;
   final int durationMinutes;
+  final int durationSeconds;
   final DateTime date;
 
   /// Converts an activity returned by Laravel into the UI model.
@@ -33,6 +35,11 @@ class Activity {
     final distance = json['distance_km'];
     final duration = json['duration_seconds'];
 
+    final seconds = (duration is num
+            ? duration.toDouble()
+            : double.tryParse(duration?.toString() ?? '') ?? 0)
+        .round();
+
     return Activity(
       id: int.tryParse((json['id'] ?? '').toString()),
       title: (json['title'] ?? '').toString().trim().isEmpty
@@ -47,6 +54,7 @@ class Activity {
                   : double.tryParse(duration?.toString() ?? '') ?? 0) /
               60)
           .round(),
+      durationSeconds: seconds,
       date: parsedDate.toLocal(),
     );
   }
